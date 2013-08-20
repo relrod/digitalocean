@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes #-}
 -- BSD-3, Ricky Elrod <ricky@elrod.me>
 
 module Network.DigitalOcean (
