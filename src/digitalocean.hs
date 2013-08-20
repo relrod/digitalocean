@@ -32,7 +32,7 @@ data Droplet = Droplet {
 data DropletsResponse = DropletsResponse {
   status :: String,
   rDroplets :: [Droplet]
-}
+} deriving (Show)
 
 instance FromJSON DropletsResponse where
   parseJSON (Object v) =
@@ -66,8 +66,8 @@ constructURL :: String -> Authentication -> String
 constructURL a b = url ++ a ++ "?" ++ authQS b
 
 -- GET /droplets
-droplets :: Authentication -> Control.Monad.IO.Class.MonadIO m => m BS.ByteString
-droplets a = simpleHttp $ constructURL "/droplets" a
+droplets :: Authentication -> (MonadIO m) => m (Maybe DropletsResponse)
+droplets a = liftM decode $ simpleHttp $ constructURL "/droplets" a
 
 -- GET /regions
 regions :: Authentication -> Control.Monad.IO.Class.MonadIO m => m BS.ByteString
