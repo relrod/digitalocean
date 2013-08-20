@@ -14,9 +14,9 @@ of Haskell. You've been warned. :)
 let a = Authentication "redacted" "redacted"
 x <- droplets a
 
-liftM (map ipAddress) $ liftM rDroplets x
+liftM (map ipAddress . rDroplets) x
 -- Just ["198.211.109.123","192.241.204.123"]
 
-fmap (map name) $ fmap rDroplets x
+fmap (map name . rDroplets) x
 -- Just ["myserver01.example.com","myserver02.example.com"]
 ```
