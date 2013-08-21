@@ -17,7 +17,7 @@ import Network.HTTP.Base (urlEncode)
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
 data Droplet = Droplet {
-  id :: Int,
+  dropletId :: Int,
   name :: String,
   imageId :: Int,
   sizeId :: Int,
@@ -32,6 +32,16 @@ data Droplet = Droplet {
 data DropletsResponse = DropletsResponse {
   status :: String,
   rDroplets :: [Droplet]
+} deriving (Show)
+
+data RegionsResponse = RegionsResponse {
+  rResponseStatus :: String,
+  rRegions :: [Region]
+} deriving (Show)
+
+data Region = Region {
+  rId :: Int,
+  rName :: String
 } deriving (Show)
 
 instance FromJSON DropletsResponse where
@@ -54,6 +64,18 @@ instance FromJSON Droplet where
     (v .: "status") <*>
     (v .: "created_at")
 
+instance FromJSON RegionsResponse where
+  parseJSON (Object v) =
+    RegionsResponse <$>
+    (v .: "status") <*>
+    (v .: "regions")
+
+instance FromJSON Region where
+  parseJSON (Object v) =
+    Region <$>
+    (v .: "id") <*>
+    (v .: "name")
+
 -- The API url
 url :: String
 url = "https://api.digitalocean.com"
@@ -70,5 +92,5 @@ droplets :: Authentication -> (MonadIO m) => m (Maybe DropletsResponse)
 droplets a = liftM decode $ simpleHttp $ constructURL "/droplets" a
 
 -- GET /regions
-regions :: Authentication -> Control.Monad.IO.Class.MonadIO m => m BS.ByteString
-regions a = simpleHttp $ constructURL "/regions" a
+regions :: Authentication -> (MonadIO m) => m (Maybe RegionsResponse)
+regions a = liftM decode $ simpleHttp $ constructURL "/regions" a
