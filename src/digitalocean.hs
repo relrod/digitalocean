@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes, ScopedTypeVariables #-}
 -- BSD-3, Ricky Elrod <ricky@elrod.me>
+-- BSD-3, Maxwell Swadling <maxwellswadling@gmail.com>
 
 module Network.DigitalOcean (
   Authentication (..),
-  droplets,
-  regions,
-  sizes
+  Droplet (..), droplets,
+  Region (..), regions,
+  Size (..), sizes
 ) where
 
 import Control.Applicative ((<$>), (<*>))
