@@ -6,7 +6,9 @@ module Network.DigitalOcean (
   Authentication (..),
   Droplet (..), droplets,
   Region (..), regions,
-  Size (..), sizes
+  Size (..), sizes,
+  Image (..), images,
+  SSH (..), ssh_keys
 ) where
 
 import Control.Applicative ((<$>), (<*>))
@@ -52,6 +54,17 @@ data Size = Size {
   sCostMonth :: String -- Yeah, it's a string.
 } deriving (Show)
 
+data Image = Image {
+  iImageId :: Int,
+  iImageName :: String,
+  iImageDistribution :: String
+} deriving (Show)
+
+data SSH = SSH {
+  sshId :: Int,
+  sshName :: String
+} deriving (Show)
+
 data NewDropletRequest = NewDropletRequest {
   ndName :: String,
   ndSizeId :: Int,
@@ -74,6 +87,8 @@ type DropletsResponse = DOResponse Droplet
 type NewDropletResponse = DOResponse NewDroplet
 type RegionsResponse = DOResponse Region
 type SizesResponse = DOResponse Size
+type ImagesResponse = DOResponse Image
+type SSHsResponse = DOResponse SSH
 
 class DOResp a where
   primaryKey :: a -> Text
@@ -88,6 +103,10 @@ instance DOResp Region where
   primaryKey _ = "regions"
 instance DOResp Size where
   primaryKey _ = "sizes"
+instance DOResp Image where
+  primaryKey _ = "images"
+instance DOResp SSH where
+  primaryKey _ = "ssh_keys"
 
 class MkParams a where
   mkParams :: a -> String
@@ -146,6 +165,19 @@ instance FromJSON Size where
     (v .: "cost_per_hour") <*>
     (v .: "cost_per_month")
 
+instance FromJSON Image where
+  parseJSON (Object v) =
+    Image <$>
+    (v .: "id") <*>
+    (v .: "name") <*>
+    (v .: "distribution")
+
+instance FromJSON SSH where
+  parseJSON (Object v) =
+    SSH <$>
+    (v .: "id") <*>
+    (v .: "name")
+
 -- The API url
 url :: String
 url = "https://api.digitalocean.com"
@@ -168,3 +200,9 @@ regions = request "regions" ""
 
 sizes :: Authentication -> (MonadIO m) => m (Maybe SizesResponse)
 sizes = request "sizes" ""
+
+images :: Authentication -> (MonadIO m) => m (Maybe ImagesResponse)
+images = request "images" ""
+
+ssh_keys :: Authentication -> (MonadIO m) => m (Maybe SSHsResponse)
+ssh_keys = request "ssh_keys" ""
