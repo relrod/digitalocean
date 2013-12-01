@@ -1,7 +1,7 @@
 name:                digitalocean-hs
 version:             0.1.0.0
 synopsis:            A Haskell library for working with the DigitalOcean API
-description:         This library intends to give an easy means of accessing and manipulating all parts of the DigitalOcean API. Currently only supports querying images, regions, ssh_keys and droplet sizes. Can also generate new droplets.
+description:         This library may be used to interact with the DigitalOcean API. Currently only supports querying images, regions, ssh_keys, droplet sizes and currently running droplets. Can also spawn new droplets (servers).
 homepage:            https://github.com/CodeBlock/digitalocean-hs
 
 license:             BSD3
@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 
 source-repository head
   type:         git
-  location:     git://github.com/CodeBlock/digitalocean-hs.git
+  location:     git@github.com:CodeBlock/digitalocean-hs.git
 
 library
   exposed-modules:     Network.DigitalOcean
