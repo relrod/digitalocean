@@ -77,10 +77,8 @@ type SizesResponse = DOResponse Size
 
 class DOResp a where
   primaryKey :: a -> Text
-  request :: FromJSON a => String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-  request p x = liftM decode $ simpleHttp $ constructURL ("/" <> unpack (primaryKey (undefined :: a)) <> "/") x p
-  requestWithURL :: FromJSON a => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-  requestWithURL url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
+  request :: FromJSON a => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
+  request url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
 
 instance DOResp Droplet where
   primaryKey _ = "droplets"
@@ -129,13 +127,13 @@ instance FromJSON NewDroplet where
   parseJSON (Object v) =
     NewDroplet <$>
     (v .: "id") <*>
-    (v .: "name")
+    (v .: "event_id")
 
 instance FromJSON Region where
   parseJSON (Object v) =
     Region <$>
     (v .: "id") <*>
-    (v .: "event_id")
+    (v .: "name")
 
 instance FromJSON Size where
   parseJSON (Object v) =
@@ -160,13 +158,13 @@ constructURL :: String -> Authentication -> String -> String
 constructURL a b p = url ++ a ++ "?" ++ authQS b ++ p
 
 droplets :: Authentication -> (MonadIO m) => m (Maybe DropletsResponse)
-droplets = request ""
+droplets = request "droplets" ""
 
 newDroplet :: NewDropletRequest -> Authentication -> (MonadIO m) => m (Maybe NewDropletResponse)
-newDroplet r = requestWithURL "droplets/new" (mkParams r)
+newDroplet r = request "droplets/new" (mkParams r)
 
 regions :: Authentication -> (MonadIO m) => m (Maybe RegionsResponse)
-regions = request ""
+regions = request "regions" ""
 
 sizes :: Authentication -> (MonadIO m) => m (Maybe SizesResponse)
-sizes = request ""
+sizes = request "sizes" ""
