@@ -2,6 +2,8 @@
 -- BSD-3, Ricky Elrod <ricky@elrod.me>
 -- BSD-3, Maxwell Swadling <maxwellswadling@gmail.com>
 
+-- TODO:
+-- - Dryrun mode
 module Network.DigitalOcean (
   Authentication (..),
   DOResponse (..),
@@ -29,11 +31,11 @@ import Data.List (intercalate, concat)
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
 data Droplet = Droplet {
-  dropletId :: Int,
+  dropletId :: Integer,
   name :: String,
-  imageId :: Int,
-  sizeId :: Int,
-  regionId :: Int,
+  imageId :: Integer,
+  sizeId :: Integer,
+  regionId :: Integer,
   backupsActive :: Bool,
   ipAddress :: String,
   locked :: Bool,
@@ -42,61 +44,68 @@ data Droplet = Droplet {
 } deriving (Show)
 
 data Region = Region {
-  rId :: Int,
+  rId :: Integer,
   rName :: String
 } deriving (Show)
 
 data Size = Size {
-  sId :: Int,
+  sId :: Integer,
   sName :: String,
-  sMemory :: Int,
-  sCpu :: Int,
-  sDisk :: Int,
+  sMemory :: Integer,
+  sCpu :: Integer,
+  sDisk :: Integer,
   sCostHour :: Float,
   sCostMonth :: String -- Yeah, it's a string.
 } deriving (Show)
 
 data Image = Image {
-  iImageId :: Int,
+  iImageId :: Integer,
   iImageName :: String,
   iImageDistribution :: String
 } deriving (Show)
 
 data SSH = SSH {
-  sshId :: Int,
+  sshId :: Integer,
   sshName :: String
 } deriving (Show)
 
 data NewDropletRequest = NewDropletRequest {
   ndName :: String,
-  ndSizeId :: Int,
-  ndImageId :: Int,
-  ndRegionId :: Int,
-  ndSSHKeys :: [Int]
+  ndSizeId :: Integer,
+  ndImageId :: Integer,
+  ndRegionId :: Integer,
+  ndSSHKeys :: [Integer]
 } deriving (Show)
 
 data NewDroplet = NewDroplet {
-  ndId :: Int,
-  ndEventId :: Int
+  ndId :: Integer,
+  ndEventId :: Integer
 } deriving (Show)
 
 data DOResponse a = DOResponse {
   rResponseStatus :: String,
-  rResponseObjects :: [a]
+  rResponseObjects :: a
 } deriving (Show)
 
-type DropletsResponse = DOResponse Droplet
+type DropletsResponse = DOResponse [Droplet]
 type NewDropletResponse = DOResponse NewDroplet
-type RegionsResponse = DOResponse Region
-type SizesResponse = DOResponse Size
-type ImagesResponse = DOResponse Image
-type SSHsResponse = DOResponse SSH
+type RegionsResponse = DOResponse [Region]
+type SizesResponse = DOResponse [Size]
+type ImagesResponse = DOResponse [Image]
+type SSHsResponse = DOResponse [SSH]
+
+-- request an array of objects
+request :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse [a]))
+request url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
+-- request a single object
+requestObject :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
+requestObject url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
 
 class DOResp a where
   primaryKey :: a -> Text
-  request :: FromJSON a => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-  request url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
-
+instance DOResp a => DOResp [a] where
+  -- the request / requestObject ensure you can't lookup key on an array
+  primaryKey _ = primaryKey (undefined :: a)
 instance DOResp Droplet where
   primaryKey _ = "droplets"
 instance DOResp NewDroplet where
@@ -195,7 +204,7 @@ droplets :: Authentication -> (MonadIO m) => m (Maybe DropletsResponse)
 droplets = request "droplets" ""
 
 newDroplet :: NewDropletRequest -> Authentication -> (MonadIO m) => m (Maybe NewDropletResponse)
-newDroplet r = request "droplets/new" (mkParams r)
+newDroplet r = requestObject "droplets/new" (mkParams r)
 
 regions :: Authentication -> (MonadIO m) => m (Maybe RegionsResponse)
 regions = request "regions" ""

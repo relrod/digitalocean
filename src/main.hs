@@ -53,16 +53,31 @@ instance Boxy SSH where
   boxit (SSH i n) = t i : text n : []
   title _ = "id" : "name" : []
 
-main = do
+main = getArgs >>= \args -> case args of
+  ["provision", n, s, i, r, sh] -> provision n s i r sh
+  [] -> report
+  _ -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id\n  example: provision boxname 66 962304 3 [12345]\n"
+
+auth = do
   cid <- getEnv "DIGITAL_OCEAN_CLIENT_ID"
   api <- getEnv "DIGITAL_OCEAN_API_KEY"
-  let a = Authentication cid api
-      g f = f a >>= \x -> case fmap rResponseObjects x of
+  return $ Authentication cid api
+
+provision n s i r sh = do
+  req <- return $ NewDropletRequest n (read s) (read i) (read r) (read sh)
+  print req
+  a <- auth
+  resp <- newDroplet req a
+  print resp
+
+report = do
+  a <- auth
+  let g f = f a >>= \x -> case fmap rResponseObjects x of
         Nothing -> error "network error"
         (Just x') -> boxup x'
       wT n x = putStrLn n >> x >> putStrLn ""
   wT "Droplets" $ g droplets
-  wT "Sizes" $ g sizes
-  wT "Regions" $ g regions
+  wT "Sizes"    $ g sizes
+  wT "Regions"  $ g regions
   wT "SSH Keys" $ g ssh_keys
-  wT "Images" $ g images
+  wT "Images"   $ g images
