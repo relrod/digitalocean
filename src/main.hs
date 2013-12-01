@@ -52,12 +52,16 @@ instance Boxy Image where
 instance Boxy SSH where
   boxit (SSH i n) = t i : text n : []
   title _ = "id" : "name" : []
+instance Boxy PackedDroplet where
+  boxit (PackedDroplet i n (Image _ imgn _) (Size _ sn _ _ _ _ _) (Region _ rn) _ ip _ st _) = t i : text n : text ip : text st : text sn : text imgn : text rn : []
+  title _ = "id" : "name" : "ip" : "status" : "size" : "image" : "region" : []
 
 main = getArgs >>= \args -> case args of
   ["provision", n, s, i, r, sh] -> provision n s i r sh
   ["--version"] -> putStrLn "version 1.0"
-  [] -> report
-  _ -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id\n  example: provision boxname 66 962304 3 [12345]\n"
+  []            -> report
+  ["status"]    -> reportStatus
+  _             -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id\n  example: provision boxname 66 962304 3 [12345]\n"
 
 auth = do
   cid <- getEnv "DIGITAL_OCEAN_CLIENT_ID"
@@ -82,3 +86,16 @@ report = do
   wT "Regions"  $ g regions
   wT "SSH Keys" $ g ssh_keys
   wT "Images"   $ g images
+
+reportStatus = do
+  a <- auth
+  let g f = f a >>= \x -> case fmap rResponseObjects x of
+        Nothing -> error "network error"
+        (Just x') -> return x'
+  -- do these in parallel
+  s <- g sizes
+  r <- g regions
+  k <- g ssh_keys
+  i <- g images
+  d <- g droplets
+  boxup $ packDroplets s r k i d

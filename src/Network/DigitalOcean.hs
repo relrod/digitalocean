@@ -12,7 +12,8 @@ module Network.DigitalOcean (
   Size (..), sizes,
   Image (..), images,
   SSH (..), ssh_keys,
-  NewDropletRequest (..), newDroplet
+  NewDropletRequest (..), newDroplet,
+  PackedDroplet (..), packDroplets
 ) where
 
 import Control.Applicative ((<$>), (<*>))
@@ -26,7 +27,8 @@ import Data.Monoid
 import Network.HTTP.Base (urlEncode)
 import Data.Aeson.Types (Parser)
 import Debug.Trace
-import Data.List (intercalate, concat)
+import Data.Maybe
+import Data.List (intercalate, concat, find)
 
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
@@ -93,6 +95,31 @@ type RegionsResponse = DOResponse [Region]
 type SizesResponse = DOResponse [Size]
 type ImagesResponse = DOResponse [Image]
 type SSHsResponse = DOResponse [SSH]
+
+-- a droplet with objects (joined on id)
+data PackedDroplet = PackedDroplet {
+  pDropletId :: Integer,
+  pName :: String,
+  pImage :: Image,
+  pSize :: Size,
+  pRegion :: Region,
+  pBackupsActive :: Bool,
+  pIpAddress :: String,
+  pLocked :: Bool,
+  pStatus' :: String,
+  pCreatedAt :: String
+} deriving (Show)
+
+-- could do lenses...
+packDroplets :: [Size] -> [Region] -> [SSH] -> [Image] -> [Droplet] -> [PackedDroplet]
+packDroplets _ _ _ _ [] = []
+packDroplets s r k i ((Droplet idx n im si re b ip l st c):xs) =
+  PackedDroplet idx n (getImage im i) (getSize si s) (getRegion re r) b ip l st c : packDroplets s r k i xs
+  where
+    -- safe by construction? :P
+    getImage i  = fromJust . find (\(Image x _ _) -> x == i)
+    getSize i   = fromJust . find (\(Size x _ _ _ _ _ _) -> x == i)
+    getRegion i = fromJust . find (\(Region x _) -> x == i)
 
 -- request an array of objects
 request :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse [a]))
