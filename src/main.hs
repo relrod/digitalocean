@@ -12,6 +12,8 @@ import Control.Monad
 import Data.List (transpose)
 import Control.Applicative
 import Text.Printf
+import Control.Concurrent
+import Control.Concurrent.MVar
 
 class Boxy a where
   boxit :: a -> [Box]
@@ -93,9 +95,15 @@ reportStatus = do
         Nothing -> error "network error"
         (Just x') -> return x'
   -- do these in parallel
-  s <- g sizes
-  r <- g regions
-  k <- g ssh_keys
-  i <- g images
-  d <- g droplets
-  boxup $ packDroplets s r k i d
+  s <- newEmptyMVar
+  forkIO $ g sizes >>= putMVar s
+  r <- newEmptyMVar
+  forkIO $ g regions >>= putMVar r
+  k <- newEmptyMVar
+  forkIO $ g ssh_keys >>= putMVar k
+  i <- newEmptyMVar
+  forkIO $ g images >>= putMVar i
+  d <- newEmptyMVar
+  forkIO $ g droplets >>= putMVar d
+  p <- packDroplets <$> takeMVar s <*> takeMVar r <*> takeMVar k <*> takeMVar i <*> takeMVar d
+  boxup p
