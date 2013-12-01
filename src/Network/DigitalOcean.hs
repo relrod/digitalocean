@@ -9,7 +9,8 @@ module Network.DigitalOcean (
   Region (..), regions,
   Size (..), sizes,
   Image (..), images,
-  SSH (..), ssh_keys
+  SSH (..), ssh_keys,
+  NewDropletRequest (..), newDroplet
 ) where
 
 import Control.Applicative ((<$>), (<*>))
@@ -117,7 +118,7 @@ instance MkParams NewDropletRequest where
     where
       vals = [
           ("name", urlEncode n)
-        , ("size_id", show i)
+        , ("size_id", show s)
         , ("image_id", show i)
         , ("region_id", show r)
         , ("ssh_key_ids", intercalate "," (map show ssh))

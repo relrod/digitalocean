@@ -7,8 +7,11 @@ Released under the 3-clause BSD license.
 Implements:
 
 - GET '/droplets'
+- GET '/droplets/new'
 - GET '/regions'
 - GET '/sizes'
+- GET '/images'
+- GET '/ssh_keys'
 
 ## Using
 
