@@ -123,10 +123,17 @@ packDroplets s r k i ((Droplet idx n im si re b ip l st c):xs) =
 
 -- request an array of objects
 request :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse [a]))
-request url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
+request url p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url) x p
 -- request a single object
 requestObject :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-requestObject url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
+requestObject url p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url) x p
+
+simpleHttp' :: MonadIO m => String -> m BS.ByteString
+simpleHttp' url = liftIO $ withManager $ \man -> do
+  req <- liftIO $ parseUrl url
+  responseBody <$> httpLbs (setConnection req) man
+  where
+    setConnection req = req{requestHeaders = ("Connection", "close") : requestHeaders req, responseTimeout = Just 10000000 } -- 10 seconds
 
 class DOResp a where
   primaryKey :: a -> Text
