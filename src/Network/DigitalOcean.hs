@@ -4,6 +4,7 @@
 
 module Network.DigitalOcean (
   Authentication (..),
+  DOResponse (..),
   Droplet (..), droplets,
   Region (..), regions,
   Size (..), sizes,
@@ -50,7 +51,7 @@ data Size = Size {
   sMemory :: Int,
   sCpu :: Int,
   sDisk :: Int,
-  sCostHour :: Int,
+  sCostHour :: Float,
   sCostMonth :: String -- Yeah, it's a string.
 } deriving (Show)
 
