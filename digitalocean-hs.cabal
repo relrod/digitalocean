@@ -9,7 +9,7 @@ license-file:        LICENSE
 
 author:              Maxwell Swadling, Ricky Elrod
 maintainer:          maxwellswadling@gmail.com, ricky.gh@elrod.me
-copyright:	     Copyright (c) 2013, Maxwell Swadling, Copyright (c) 2013, Ricky Elrod
+copyright:           Copyright (c) 2013, Maxwell Swadling, Copyright (c) 2013, Ricky Elrod
 
 category:            Web, Network, Cloud
 build-type:          Simple
@@ -24,7 +24,7 @@ library
   default-language:    Haskell2010
 
 executable digitalocean-status
-  main-is:	       main.hs
+  main-is:             main.hs
   build-depends:       base >=4.6 && <4.7, text ==0.11.*, transformers ==0.3.*, aeson ==0.6.*, bytestring ==0.10.*, http-conduit ==1.9.*, HTTP ==4000.2.*, boxes >=0.1.3
   hs-source-dirs:      src
   default-language:    Haskell2010
