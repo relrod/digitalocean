@@ -20,6 +20,7 @@ import Data.Monoid
 import Network.HTTP.Base (urlEncode)
 import Data.Aeson.Types (Parser)
 import Debug.Trace
+import Data.List (intercalate, concat)
 
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
@@ -51,26 +52,58 @@ data Size = Size {
   sCostMonth :: String -- Yeah, it's a string.
 } deriving (Show)
 
+data NewDropletRequest = NewDropletRequest {
+  ndName :: String,
+  ndSizeId :: Int,
+  ndImageId :: Int,
+  ndRegionId :: Int,
+  ndSSHKeys :: [Int]
+} deriving (Show)
+
+data NewDroplet = NewDroplet {
+  ndId :: Int,
+  ndEventId :: Int
+} deriving (Show)
+
 data DOResponse a = DOResponse {
   rResponseStatus :: String,
   rResponseObjects :: [a]
 } deriving (Show)
 
 type DropletsResponse = DOResponse Droplet
+type NewDropletResponse = DOResponse NewDroplet
 type RegionsResponse = DOResponse Region
 type SizesResponse = DOResponse Size
 
 class DOResp a where
   primaryKey :: a -> Text
-  request :: FromJSON a => Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-  request x = liftM decode $ simpleHttp $ constructURL ("/" <> unpack (primaryKey (undefined :: a)) <> "/") x
+  request :: FromJSON a => String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
+  request p x = liftM decode $ simpleHttp $ constructURL ("/" <> unpack (primaryKey (undefined :: a)) <> "/") x p
+  requestWithURL :: FromJSON a => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
+  requestWithURL url p x = liftM decode $ simpleHttp $ constructURL ("/" <> url) x p
 
-instance DOResp Region where
-  primaryKey _ = "regions"
 instance DOResp Droplet where
   primaryKey _ = "droplets"
+instance DOResp NewDroplet where
+  primaryKey _ = "droplet"
+instance DOResp Region where
+  primaryKey _ = "regions"
 instance DOResp Size where
   primaryKey _ = "sizes"
+
+class MkParams a where
+  mkParams :: a -> String
+
+instance MkParams NewDropletRequest where
+  mkParams (NewDropletRequest n s i r ssh) = concat (map (\(k, v) -> "&" ++ k ++ "=" ++ v) vals)
+    where
+      vals = [
+          ("name", urlEncode n)
+        , ("size_id", show i)
+        , ("image_id", show i)
+        , ("region_id", show r)
+        , ("ssh_key_ids", intercalate "," (map show ssh))
+        ] 
 
 instance (DOResp a, FromJSON a) => FromJSON (DOResponse a) where
   parseJSON (Object v) =
@@ -92,11 +125,17 @@ instance FromJSON Droplet where
     (v .: "status") <*>
     (v .: "created_at")
 
+instance FromJSON NewDroplet where
+  parseJSON (Object v) =
+    NewDroplet <$>
+    (v .: "id") <*>
+    (v .: "name")
+
 instance FromJSON Region where
   parseJSON (Object v) =
     Region <$>
     (v .: "id") <*>
-    (v .: "name")
+    (v .: "event_id")
 
 instance FromJSON Size where
   parseJSON (Object v) =
@@ -117,14 +156,17 @@ url = "https://api.digitalocean.com"
 authQS :: Authentication -> String
 authQS a = "client_id=" ++ urlEncode (clientId a) ++ "&api_key=" ++ urlEncode (apiKey a)
 
-constructURL :: String -> Authentication -> String
-constructURL a b = url ++ a ++ "?" ++ authQS b
+constructURL :: String -> Authentication -> String -> String
+constructURL a b p = url ++ a ++ "?" ++ authQS b ++ p
 
 droplets :: Authentication -> (MonadIO m) => m (Maybe DropletsResponse)
-droplets = request
+droplets = request ""
+
+newDroplet :: NewDropletRequest -> Authentication -> (MonadIO m) => m (Maybe NewDropletResponse)
+newDroplet r = requestWithURL "droplets/new" (mkParams r)
 
 regions :: Authentication -> (MonadIO m) => m (Maybe RegionsResponse)
-regions = request
+regions = request ""
 
 sizes :: Authentication -> (MonadIO m) => m (Maybe SizesResponse)
-sizes = request
+sizes = request ""
