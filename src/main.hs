@@ -55,6 +55,7 @@ instance Boxy SSH where
 
 main = getArgs >>= \args -> case args of
   ["provision", n, s, i, r, sh] -> provision n s i r sh
+  ["--version"] -> putStrLn "version 1.0"
   [] -> report
   _ -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id\n  example: provision boxname 66 962304 3 [12345]\n"
 
