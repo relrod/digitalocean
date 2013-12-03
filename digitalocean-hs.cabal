@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 
 source-repository head
   type:         git
-  location:     git@github.com:CodeBlock/digitalocean-hs.git
+  location:     git://github.com/CodeBlock/digitalocean-hs.git
 
 library
   exposed-modules:     Network.DigitalOcean

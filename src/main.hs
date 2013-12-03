@@ -82,7 +82,7 @@ report = do
   let g f = f a >>= \x -> case fmap rResponseObjects x of
         Nothing -> error "network error"
         (Just x') -> boxup x'
-      wT n x = putStrLn n >> x >> putStrLn ""
+      wT n x = putStrLn n >> x >>= putStrLn ""
   wT "Droplets" $ g droplets
   wT "Sizes"    $ g sizes
   wT "Regions"  $ g regions

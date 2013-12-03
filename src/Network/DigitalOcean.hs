@@ -13,6 +13,8 @@ module Network.DigitalOcean (
   Image (..), images,
   SSH (..), ssh_keys,
   NewDropletRequest (..), newDroplet,
+  NewDroplet (..),
+  Event (..), event,
   PackedDroplet (..), packDroplets
 ) where
 
@@ -84,6 +86,14 @@ data NewDroplet = NewDroplet {
   ndEventId :: Integer
 } deriving (Show)
 
+data Event = Event {
+  eId :: Integer,
+  eStatus :: Maybe String,
+  eDropletId :: Integer,
+  eEventId :: Integer,
+  ePercentage :: String
+} deriving (Show)
+
 data DOResponse a = DOResponse {
   rResponseStatus :: String,
   rResponseObjects :: a
@@ -95,6 +105,7 @@ type RegionsResponse = DOResponse [Region]
 type SizesResponse = DOResponse [Size]
 type ImagesResponse = DOResponse [Image]
 type SSHsResponse = DOResponse [SSH]
+type EventResponse = DOResponse Event
 
 -- a droplet with objects (joined on id)
 data PackedDroplet = PackedDroplet {
@@ -152,6 +163,8 @@ instance DOResp Image where
   primaryKey _ = "images"
 instance DOResp SSH where
   primaryKey _ = "ssh_keys"
+instance DOResp Event where
+  primaryKey _ = "event"
 
 class MkParams a where
   mkParams :: a -> String
@@ -223,6 +236,15 @@ instance FromJSON SSH where
     (v .: "id") <*>
     (v .: "name")
 
+instance FromJSON Event where
+  parseJSON (Object v) =
+    Event <$>
+    (v .: "id") <*>
+    (v .: "action_status") <*>
+    (v .: "droplet_id") <*>
+    (v .: "event_type_id") <*>
+    (v .: "percentage")
+
 -- The API url
 url :: String
 url = "https://api.digitalocean.com"
@@ -251,3 +273,6 @@ images = request "images" ""
 
 ssh_keys :: Authentication -> (MonadIO m) => m (Maybe SSHsResponse)
 ssh_keys = request "ssh_keys" ""
+
+event :: Integer -> Authentication -> (MonadIO m) => m (Maybe EventResponse)
+event i = requestObject ("events/" ++ show i ++ "/") ""

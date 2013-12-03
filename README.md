@@ -25,3 +25,11 @@ liftM (map ipAddress . rDroplets) x
 fmap (map name . rDroplets) x
 -- Just ["myserver01.example.com","myserver02.example.com"]
 ```
+
+## Command Line App
+
+For faster performance, set an alias in your shell profile:
+
+```
+alias digitalocean-st='digitalocean-status status +RTS -N4'
+```
