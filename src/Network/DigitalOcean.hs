@@ -42,6 +42,7 @@ data Droplet = Droplet {
   regionId :: Integer,
   backupsActive :: Bool,
   ipAddress :: String,
+  privateIpAddress :: Maybe String,
   locked :: Bool,
   status' :: String,
   createdAt :: String
@@ -65,7 +66,9 @@ data Size = Size {
 data Image = Image {
   iImageId :: Integer,
   iImageName :: String,
-  iImageDistribution :: String
+  iImageDistribution :: String,
+  iImageSlug :: Maybe String,
+  iImagePublic :: Maybe Bool
 } deriving (Show)
 
 data SSH = SSH {
@@ -78,7 +81,9 @@ data NewDropletRequest = NewDropletRequest {
   ndSizeId :: Integer,
   ndImageId :: Integer,
   ndRegionId :: Integer,
-  ndSSHKeys :: [Integer]
+  ndSSHKeys :: [Integer],
+  ndPrivateNetworking :: Bool,
+  ndBackups :: Bool
 } deriving (Show)
 
 data NewDroplet = NewDroplet {
@@ -116,6 +121,7 @@ data PackedDroplet = PackedDroplet {
   pRegion :: Region,
   pBackupsActive :: Bool,
   pIpAddress :: String,
+  pPrivateIPAddress :: Maybe String,
   pLocked :: Bool,
   pStatus' :: String,
   pCreatedAt :: String
@@ -124,11 +130,11 @@ data PackedDroplet = PackedDroplet {
 -- could do lenses...
 packDroplets :: [Size] -> [Region] -> [SSH] -> [Image] -> [Droplet] -> [PackedDroplet]
 packDroplets _ _ _ _ [] = []
-packDroplets s r k i ((Droplet idx n im si re b ip l st c):xs) =
-  PackedDroplet idx n (getImage im i) (getSize si s) (getRegion re r) b ip l st c : packDroplets s r k i xs
+packDroplets s r k i ((Droplet idx n im si re b ip pip l st c):xs) =
+  PackedDroplet idx n (getImage im i) (getSize si s) (getRegion re r) b ip pip l st c : packDroplets s r k i xs
   where
     -- safe by construction? :P
-    getImage i  = fromJust . find (\(Image x _ _) -> x == i)
+    getImage i  = fromJust . find (\(Image x _ _ _ _) -> x == i)
     getSize i   = fromJust . find (\(Size x _ _ _ _ _ _) -> x == i)
     getRegion i = fromJust . find (\(Region x _) -> x == i)
 
@@ -170,7 +176,7 @@ class MkParams a where
   mkParams :: a -> String
 
 instance MkParams NewDropletRequest where
-  mkParams (NewDropletRequest n s i r ssh) = concat (map (\(k, v) -> "&" ++ k ++ "=" ++ v) vals)
+  mkParams (NewDropletRequest n s i r ssh p b) = concat (map (\(k, v) -> "&" ++ k ++ "=" ++ v) vals)
     where
       vals = [
           ("name", urlEncode n)
@@ -178,6 +184,8 @@ instance MkParams NewDropletRequest where
         , ("image_id", show i)
         , ("region_id", show r)
         , ("ssh_key_ids", intercalate "," (map show ssh))
+        , ("private_networking", show p)
+        , ("backups_enabled", show b)
         ] 
 
 instance (DOResp a, FromJSON a) => FromJSON (DOResponse a) where
@@ -196,6 +204,7 @@ instance FromJSON Droplet where
     (v .: "region_id") <*>
     (v .: "backups_active") <*>
     (v .: "ip_address") <*>
+    (v .: "private_ip_address") <*>
     (v .: "locked") <*>
     (v .: "status") <*>
     (v .: "created_at")
@@ -228,7 +237,9 @@ instance FromJSON Image where
     Image <$>
     (v .: "id") <*>
     (v .: "name") <*>
-    (v .: "distribution")
+    (v .: "distribution") <*>
+    (v .: "slug") <*>
+    (v .: "public")
 
 instance FromJSON SSH where
   parseJSON (Object v) =
