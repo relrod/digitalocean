@@ -39,9 +39,12 @@ replicateWithIndex i f = f i : replicateWithIndex (i - 1) f
 t :: (Show a) => a -> Box
 t = text . show
 
+tnull Nothing = ""
+tnull (Just x) = text x
+
 instance Boxy Droplet where
-  boxit (Droplet i n im si re ba ip lo st cr) = t i : text n : t im : t si : t re : text ip : text st : text (take 10 cr) : []
-  title _ = "id" : "name" : "image_id" : "size_id" : "region_id" : "ip_address" : "status" : "created_at" : []
+  boxit (Droplet i n im si re ba ip pip lo st cr) = t i : text n : t im : t si : t re : text ip : tnull pip : text st : text (take 10 cr) : []
+  title _ = "id" : "name" : "image_id" : "size_id" : "region_id" : "ip_address" : "private_ip_address" : "status" : "created_at" : []
 instance Boxy Size where
   boxit (Size i n m c d ch cm) = t i : text n : t m : t c : t d : text (printf "%.4f" ch) : text cm : []
   title _ = "id" : "name" : "memory" : "cpu" : "disk" : "cost/hr" : "cost/month" : []
@@ -49,29 +52,29 @@ instance Boxy Region where
   boxit (Region i n) = t i : text n : []
   title _ = "id" : "name" : []
 instance Boxy Image where
-  boxit (Image i n d) = t i : text n : text d : []
+  boxit (Image i n d _ _) = t i : text n : text d : []
   title _ = "id" : "name" : "distribution" : []
 instance Boxy SSH where
   boxit (SSH i n) = t i : text n : []
   title _ = "id" : "name" : []
 instance Boxy PackedDroplet where
-  boxit (PackedDroplet i n (Image _ imgn _) (Size _ sn _ _ _ _ _) (Region _ rn) _ ip _ st _) = t i : text n : text ip : text st : text sn : text imgn : text rn : []
-  title _ = "id" : "name" : "ip" : "status" : "size" : "image" : "region" : []
+  boxit (PackedDroplet i n (Image _ imgn _ _ _) (Size _ sn _ _ _ _ _) (Region _ rn) _ ip pip _ st _) = t i : text n : text ip : tnull pip : text st : text sn : text imgn : text rn : []
+  title _ = "id" : "name" : "ip" : "privateip" : "status" : "size" : "image" : "region" : []
 
 main = getArgs >>= \args -> case args of
-  ["provision", n, s, i, r, sh] -> provision n s i r sh
+  ["provision", n, s, i, r, sh, p, b] -> provision n s i r sh p b
   ["--version"] -> putStrLn "version 1.0"
   []            -> report
   ["status"]    -> reportStatus
-  _             -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id\n  example: provision boxname 66 962304 3 [12345]\n"
+  _             -> putStrLn "USAGE: (provision)\n\n  provision name size_id image_id region_id ssh_key_id private_networking backups\n  example: provision boxname 66 962304 3 [12345] true false\n"
 
 auth = do
   cid <- getEnv "DIGITAL_OCEAN_CLIENT_ID"
   api <- getEnv "DIGITAL_OCEAN_API_KEY"
   return $ Authentication cid api
 
-provision n s i r sh = do
-  req <- return $ NewDropletRequest n (read s) (read i) (read r) (read sh)
+provision n s i r sh p b = do
+  req <- return $ NewDropletRequest n (read s) (read i) (read r) (read sh) (read p) (read b)
   print req
   a <- auth
   resp <- newDroplet req a
@@ -82,7 +85,7 @@ report = do
   let g f = f a >>= \x -> case fmap rResponseObjects x of
         Nothing -> error "network error"
         (Just x') -> boxup x'
-      wT n x = putStrLn n >> x >>= putStrLn ""
+      wT n x = putStrLn n >> x >> putStrLn ""
   wT "Droplets" $ g droplets
   wT "Sizes"    $ g sizes
   wT "Regions"  $ g regions
