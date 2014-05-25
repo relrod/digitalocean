@@ -46,12 +46,12 @@ data Droplet = Droplet {
   locked :: Bool,
   status' :: String,
   createdAt :: String
-} deriving (Show)
+} deriving (Show, Read)
 
 data Region = Region {
   rId :: Integer,
   rName :: String
-} deriving (Show)
+} deriving (Show, Read)
 
 data Size = Size {
   sId :: Integer,
@@ -61,7 +61,7 @@ data Size = Size {
   sDisk :: Integer,
   sCostHour :: Float,
   sCostMonth :: String -- Yeah, it's a string.
-} deriving (Show)
+} deriving (Show, Read)
 
 data Image = Image {
   iImageId :: Integer,
@@ -69,12 +69,12 @@ data Image = Image {
   iImageDistribution :: String,
   iImageSlug :: Maybe String,
   iImagePublic :: Maybe Bool
-} deriving (Show)
+} deriving (Show, Read)
 
 data SSH = SSH {
   sshId :: Integer,
   sshName :: String
-} deriving (Show)
+} deriving (Show, Read)
 
 data NewDropletRequest = NewDropletRequest {
   ndName :: String,
@@ -84,12 +84,12 @@ data NewDropletRequest = NewDropletRequest {
   ndSSHKeys :: [Integer],
   ndPrivateNetworking :: Bool,
   ndBackups :: Bool
-} deriving (Show)
+} deriving (Show, Read)
 
 data NewDroplet = NewDroplet {
   ndId :: Integer,
   ndEventId :: Integer
-} deriving (Show)
+} deriving (Show, Read)
 
 data Event = Event {
   eId :: Integer,
@@ -97,12 +97,12 @@ data Event = Event {
   eDropletId :: Integer,
   eEventId :: Integer,
   ePercentage :: String
-} deriving (Show)
+} deriving (Show, Read)
 
 data DOResponse a = DOResponse {
   rResponseStatus :: String,
   rResponseObjects :: a
-} deriving (Show)
+} deriving (Show, Read)
 
 type DropletsResponse = DOResponse [Droplet]
 type NewDropletResponse = DOResponse NewDroplet
@@ -125,7 +125,7 @@ data PackedDroplet = PackedDroplet {
   pLocked :: Bool,
   pStatus' :: String,
   pCreatedAt :: String
-} deriving (Show)
+} deriving (Show, Read)
 
 -- could do lenses...
 packDroplets :: [Size] -> [Region] -> [SSH] -> [Image] -> [Droplet] -> [PackedDroplet]
@@ -175,6 +175,9 @@ instance DOResp Event where
 class MkParams a where
   mkParams :: a -> String
 
+showB True = "true"
+showB False = "false"
+
 instance MkParams NewDropletRequest where
   mkParams (NewDropletRequest n s i r ssh p b) = concat (map (\(k, v) -> "&" ++ k ++ "=" ++ v) vals)
     where
@@ -184,8 +187,8 @@ instance MkParams NewDropletRequest where
         , ("image_id", show i)
         , ("region_id", show r)
         , ("ssh_key_ids", intercalate "," (map show ssh))
-        , ("private_networking", show p)
-        , ("backups_enabled", show b)
+        , ("private_networking", showB p)
+        , ("backups_enabled", showB b)
         ] 
 
 instance (DOResp a, FromJSON a) => FromJSON (DOResponse a) where
