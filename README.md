@@ -1,4 +1,4 @@
-# digitalocean-hs
+# digitalocean
 
 A Haskell library for working with the DigitalOcean API.
 
