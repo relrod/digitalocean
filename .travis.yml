@@ -30,6 +30,7 @@ before_install:
   # Uncomment whenever hackage is down.
   # - mkdir -p ~/.cabal && cp travis/config ~/.cabal/config && $CABAL update
   - $CABAL update
+  - $CABAL install hlint
 
   # Update happy when building with GHC head
   - |
@@ -44,3 +45,4 @@ install:
 
 script:
   - $CABAL build
+  - find src '*.hs' | xargs hlint
