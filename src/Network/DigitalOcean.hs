@@ -23,15 +23,15 @@ module Network.DigitalOcean (
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad (liftM)
-import Data.Text (Text)
 import Control.Monad.IO.Class
 import Data.Aeson ((.:), decode, FromJSON(..), Value(..))
 import qualified Data.ByteString.Lazy.Char8 as BS
-import Network.HTTP.Conduit
-import Data.Monoid
-import Network.HTTP.Base (urlEncode)
-import Data.Maybe
 import Data.List (intercalate, find)
+import Data.Maybe
+import Data.Monoid
+import Data.Text (Text)
+import Network.HTTP.Base (urlEncode)
+import Network.HTTP.Conduit
 
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
@@ -106,12 +106,12 @@ data DOResponse a = DOResponse {
 } deriving (Show, Read)
 
 type DropletsResponse = DOResponse [Droplet]
+type EventResponse = DOResponse Event
+type ImagesResponse = DOResponse [Image]
 type NewDropletResponse = DOResponse NewDroplet
 type RegionsResponse = DOResponse [Region]
-type SizesResponse = DOResponse [Size]
-type ImagesResponse = DOResponse [Image]
 type SSHsResponse = DOResponse [SSH]
-type EventResponse = DOResponse Event
+type SizesResponse = DOResponse [Size]
 
 -- a droplet with objects (joined on id)
 data PackedDroplet = PackedDroplet {

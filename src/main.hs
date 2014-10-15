@@ -3,13 +3,13 @@
 
 module Main (main) where
 
+import Control.Applicative
+import Control.Concurrent
+import Data.List (transpose)
 import Network.DigitalOcean
 import System.Environment
 import Text.PrettyPrint.Boxes
-import Data.List (transpose)
-import Control.Applicative
 import Text.Printf
-import Control.Concurrent
 
 class Boxy a where
   boxit :: a -> [Box]
