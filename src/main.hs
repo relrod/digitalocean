@@ -107,14 +107,14 @@ reportStatus = do
         (Just x') -> return x'
   -- do these in parallel
   s <- newEmptyMVar
-  forkIO $ g sizes >>= putMVar s
+  _ <- forkIO $ g sizes >>= putMVar s
   r <- newEmptyMVar
-  forkIO $ g regions >>= putMVar r
+  _ <- forkIO $ g regions >>= putMVar r
   k <- newEmptyMVar
-  forkIO $ g sshKeys >>= putMVar k
+  _ <- forkIO $ g sshKeys >>= putMVar k
   i <- newEmptyMVar
-  forkIO $ g images >>= putMVar i
+  _ <- forkIO $ g images >>= putMVar i
   d <- newEmptyMVar
-  forkIO $ g droplets >>= putMVar d
+  _ <- forkIO $ g droplets >>= putMVar d
   p <- packDroplets <$> takeMVar s <*> takeMVar r <*> takeMVar k <*> takeMVar i <*> takeMVar d
   boxup p
