@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:     Network.DigitalOcean
+  extensions:          CPP
   build-depends:
     HTTP         >= 4000 && < 4001,
     aeson        >= 0.6  && < 0.9,

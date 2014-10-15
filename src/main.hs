@@ -89,7 +89,7 @@ report = do
   wT "Droplets" $ g droplets
   wT "Sizes"    $ g sizes
   wT "Regions"  $ g regions
-  wT "SSH Keys" $ g ssh_keys
+  wT "SSH Keys" $ g sshKeys
   wT "Images"   $ g images
 
 reportStatus = do
@@ -103,7 +103,7 @@ reportStatus = do
   r <- newEmptyMVar
   forkIO $ g regions >>= putMVar r
   k <- newEmptyMVar
-  forkIO $ g ssh_keys >>= putMVar k
+  forkIO $ g sshKeys >>= putMVar k
   i <- newEmptyMVar
   forkIO $ g images >>= putMVar i
   d <- newEmptyMVar

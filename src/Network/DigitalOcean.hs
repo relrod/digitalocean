@@ -1,4 +1,7 @@
-{-# LANGUAGE OverloadedStrings, RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -- BSD-3, Ricky Elrod <ricky@elrod.me>
 -- BSD-3, Maxwell Swadling <maxwellswadling@gmail.com>
 
@@ -11,7 +14,7 @@ module Network.DigitalOcean (
   Region (..), regions,
   Size (..), sizes,
   Image (..), images,
-  SSH (..), ssh_keys,
+  SSH (..), sshKeys,
   NewDropletRequest (..), newDroplet,
   NewDroplet (..),
   Event (..), event,
@@ -20,17 +23,15 @@ module Network.DigitalOcean (
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad (liftM)
-import Data.Text (Text, unpack)
+import Data.Text (Text)
 import Control.Monad.IO.Class
-import Data.Aeson ((.:), (.:?), decode, FromJSON(..), Value(..))
+import Data.Aeson ((.:), decode, FromJSON(..), Value(..))
 import qualified Data.ByteString.Lazy.Char8 as BS
 import Network.HTTP.Conduit
 import Data.Monoid
 import Network.HTTP.Base (urlEncode)
-import Data.Aeson.Types (Parser)
-import Debug.Trace
 import Data.Maybe
-import Data.List (intercalate, concat, find)
+import Data.List (intercalate, find)
 
 data Authentication = Authentication { clientId :: String, apiKey ::  String } deriving (Show)
 
@@ -130,24 +131,24 @@ data PackedDroplet = PackedDroplet {
 -- could do lenses...
 packDroplets :: [Size] -> [Region] -> [SSH] -> [Image] -> [Droplet] -> [PackedDroplet]
 packDroplets _ _ _ _ [] = []
-packDroplets s r k i ((Droplet idx n im si re b ip pip l st c):xs) =
+packDroplets s r k i (Droplet idx n im si re b ip pip l st c : xs) =
   PackedDroplet idx n (getImage im i) (getSize si s) (getRegion re r) b ip pip l st c : packDroplets s r k i xs
   where
     -- safe by construction? :P
-    getImage i  = fromJust . find (\(Image x _ _ _ _) -> x == i)
-    getSize i   = fromJust . find (\(Size x _ _ _ _ _ _) -> x == i)
-    getRegion i = fromJust . find (\(Region x _) -> x == i)
+    getImage i'  = fromJust . find (\(Image x _ _ _ _) -> x == i')
+    getSize i'   = fromJust . find (\(Size x _ _ _ _ _ _) -> x == i')
+    getRegion i' = fromJust . find (\(Region x _) -> x == i')
 
 -- request an array of objects
 request :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse [a]))
-request url p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url) x p
+request url' p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url') x p
 -- request a single object
 requestObject :: (FromJSON a, DOResp a) => String -> String -> Authentication -> (MonadIO m) => m (Maybe (DOResponse a))
-requestObject url p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url) x p
+requestObject url' p x = liftM decode $ simpleHttp' $ constructURL ("/" <> url') x p
 
 simpleHttp' :: MonadIO m => String -> m BS.ByteString
-simpleHttp' url = liftIO $ withManager $ \man -> do
-  req <- liftIO $ parseUrl url
+simpleHttp' url' = liftIO $ withManager $ \man -> do
+  req <- liftIO $ parseUrl url'
   responseBody <$> httpLbs (setConnection req) man
   where
     setConnection req = req{requestHeaders = ("Connection", "close") : requestHeaders req, responseTimeout = Just 10000000 } -- 10 seconds
@@ -175,11 +176,12 @@ instance DOResp Event where
 class MkParams a where
   mkParams :: a -> String
 
-showB True = "true"
+showB :: Bool -> String
+showB True  = "true"
 showB False = "false"
 
 instance MkParams NewDropletRequest where
-  mkParams (NewDropletRequest n s i r ssh p b) = concat (map (\(k, v) -> "&" ++ k ++ "=" ++ v) vals)
+  mkParams (NewDropletRequest n s i r ssh p b) = concatMap (\(k, v) -> "&" ++ k ++ "=" ++ v) vals
     where
       vals = [
           ("name", urlEncode n)
@@ -189,7 +191,7 @@ instance MkParams NewDropletRequest where
         , ("ssh_key_ids", intercalate "," (map show ssh))
         , ("private_networking", showB p)
         , ("backups_enabled", showB b)
-        ] 
+        ]
 
 instance (DOResp a, FromJSON a) => FromJSON (DOResponse a) where
   parseJSON (Object v) =
@@ -285,8 +287,8 @@ sizes = request "sizes" ""
 images :: Authentication -> (MonadIO m) => m (Maybe ImagesResponse)
 images = request "images" ""
 
-ssh_keys :: Authentication -> (MonadIO m) => m (Maybe SSHsResponse)
-ssh_keys = request "ssh_keys" ""
+sshKeys :: Authentication -> (MonadIO m) => m (Maybe SSHsResponse)
+sshKeys = request "ssh_keys" ""
 
 event :: Integer -> Authentication -> (MonadIO m) => m (Maybe EventResponse)
 event i = requestObject ("events/" ++ show i ++ "/") ""
