@@ -1,6 +1,6 @@
 # digitalocean
 
-[![Build Status](https://travis-ci.org/CodeBlock/digitalocean.svg?branch=master)](https://travis-ci.org/CodeBlock/digitalocean)
+[![Build Status](https://travis-ci.org/relrod/digitalocean.svg?branch=master)](https://travis-ci.org/CodeBlock/digitalocean)
 
 A Haskell library for working with the DigitalOcean API.
 

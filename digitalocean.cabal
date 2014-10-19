@@ -5,7 +5,7 @@ description:
   This library may be used to interact with the DigitalOcean API. Currently only
   supports querying images, regions, ssh_keys, droplet sizes and currently
   running droplets. Can also spawn new droplets (servers).
-homepage:            https://github.com/CodeBlock/digitalocean-hs
+homepage:            https://github.com/relrod/digitalocean-hs
 
 license:             BSD3
 license-file:        LICENSE
@@ -20,7 +20,7 @@ cabal-version:       >=1.10
 
 source-repository head
   type:         git
-  location:     git://github.com/CodeBlock/digitalocean-hs.git
+  location:     git://github.com/relrod/digitalocean-hs.git
 
 library
   exposed-modules:     Network.DigitalOcean
